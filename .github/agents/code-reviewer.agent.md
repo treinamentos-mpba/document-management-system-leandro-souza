@@ -7,6 +7,10 @@ handoffs:
     agent: agent
     prompt: Aplique as melhorias priorizadas na revisão acima, sem quebrar funcionalidades existentes.
     send: false
+  - label: Revisar segurança do DMS
+    agent: dms-security-reviewer
+    prompt: Faça uma revisão read-only dos riscos de segurança nos arquivos e fluxos alterados, seguindo o escopo e formato do agente DMS Security Reviewer.
+    send: false
 ---
 
 # Agente Code Reviewer
