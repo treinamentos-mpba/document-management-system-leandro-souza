@@ -20,30 +20,61 @@ async function closeServer(server) {
   });
 }
 
-test('faz upload, lista e baixa um documento', async () => {
+async function uploadTestDocument(baseUrl, filename = 'teste.txt', content = 'conteudo de teste') {
+  const form = new FormData();
+  form.append('file', new Blob([content], { type: 'text/plain' }), filename);
+
+  const response = await fetch(`${baseUrl}/upload`, { method: 'POST', body: form });
+  assert.strictEqual(response.status, 201);
+  return response.json();
+}
+
+test('faz upload e retorna os metadados do documento', async () => {
   const server = await startServer();
   const baseUrl = `http://127.0.0.1:${server.address().port}`;
   let documentId;
 
   try {
-    const form = new FormData();
-    form.append('file', new Blob(['conteudo de teste'], { type: 'text/plain' }), 'teste.txt');
-
-    const uploadResponse = await fetch(`${baseUrl}/upload`, { method: 'POST', body: form });
-    assert.strictEqual(uploadResponse.status, 201);
-
-    const uploadedDocument = await uploadResponse.json();
+    const uploadedDocument = await uploadTestDocument(baseUrl);
     documentId = uploadedDocument.id;
     assert.strictEqual(uploadedDocument.originalName, 'teste.txt');
     assert.strictEqual(uploadedDocument.size, Buffer.byteLength('conteudo de teste'));
     assert.strictEqual(uploadedDocument.owner, process.env.DMS_DEFAULT_OWNER || 'anonymous');
     assert.ok(Number.isFinite(Date.parse(uploadedDocument.uploadedAt)));
+  } finally {
+    await closeServer(server);
+    if (documentId) await documentRepository.removeDocument(documentId);
+  }
+});
+
+test('lista os documentos enviados', async () => {
+  const server = await startServer();
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  let documentId;
+
+  try {
+    const uploadedDocument = await uploadTestDocument(baseUrl);
+    documentId = uploadedDocument.id;
 
     const listResponse = await fetch(`${baseUrl}/documents`);
     assert.strictEqual(listResponse.status, 200);
     const listBody = await listResponse.json();
     assert.ok(listBody.documents.some((document) => document.id === documentId));
     assert.ok(!JSON.stringify(listBody).includes('storageName'));
+  } finally {
+    await closeServer(server);
+    if (documentId) await documentRepository.removeDocument(documentId);
+  }
+});
+
+test('baixa um documento pelo identificador', async () => {
+  const server = await startServer();
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  let documentId;
+
+  try {
+    const uploadedDocument = await uploadTestDocument(baseUrl);
+    documentId = uploadedDocument.id;
 
     const downloadResponse = await fetch(`${baseUrl}/documents/${documentId}/download`);
     assert.strictEqual(downloadResponse.status, 200);
