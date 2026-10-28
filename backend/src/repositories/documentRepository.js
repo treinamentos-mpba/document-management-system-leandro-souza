@@ -3,9 +3,9 @@ const path = require('node:path');
 const multer = require('multer');
 const { randomUUID } = require('node:crypto');
 const { maxFileSize, storageDirectory } = require('../config/uploadConfig');
+const { isValidDocumentId } = require('../utils/documentId');
 
 const documents = new Map();
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const storage = multer.diskStorage({
   destination: (_request, _file, callback) => {
@@ -50,7 +50,7 @@ const documentRepository = {
   },
 
   async removeUploadedFile(id) {
-    if (!uuidPattern.test(id)) return;
+    if (!isValidDocumentId(id)) return;
     await fs.rm(path.join(storageDirectory, id), { force: true });
   },
 

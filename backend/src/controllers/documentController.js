@@ -1,6 +1,6 @@
-const { DocumentServiceError } = require('../services/documentService');
+const DocumentServiceError = require('../services/documentServiceError');
 
-function createDocumentController(documentService) {
+function createDocumentController({ documentUploadService, documentQueryService }) {
   return {
     upload: async (request, response, next) => {
       if (!request.file) {
@@ -8,7 +8,7 @@ function createDocumentController(documentService) {
       }
 
       try {
-        const document = await documentService.createDocument(request.file);
+        const document = await documentUploadService.createDocument(request.file);
         return response.status(201).json(document);
       } catch (error) {
         return next(error);
@@ -17,7 +17,7 @@ function createDocumentController(documentService) {
 
     list: (_request, response, next) => {
       try {
-        return response.status(200).json({ documents: documentService.listDocuments() });
+        return response.status(200).json({ documents: documentQueryService.listDocuments() });
       } catch (error) {
         return next(new DocumentServiceError(500, 'DOCUMENT_LIST_FAILED', 'Não foi possível listar os documentos.'));
       }
@@ -27,7 +27,7 @@ function createDocumentController(documentService) {
       let download;
 
       try {
-        download = documentService.getDocumentForDownload(request.params.id);
+        download = documentQueryService.getDocumentForDownload(request.params.id);
       } catch (error) {
         return next(error);
       }
