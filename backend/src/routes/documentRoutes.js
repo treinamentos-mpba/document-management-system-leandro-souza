@@ -1,12 +1,17 @@
 const express = require('express');
 const multer = require('multer');
 const documentRepository = require('../repositories/documentRepository');
-const { DocumentService, DocumentServiceError } = require('../services/documentService');
+const { owner } = require('../config/uploadConfig');
+const DocumentServiceError = require('../services/documentServiceError');
+const DocumentQueryService = require('../services/documentQueryService');
+const DocumentUploadService = require('../services/documentUploadService');
 const createDocumentController = require('../controllers/documentController');
 
 const router = express.Router();
-const documentService = new DocumentService(documentRepository);
-const documentController = createDocumentController(documentService);
+const documentController = createDocumentController({
+  documentUploadService: new DocumentUploadService(documentRepository, owner),
+  documentQueryService: new DocumentQueryService(documentRepository),
+});
 const parseUpload = uploadMiddleware();
 
 function uploadMiddleware() {
